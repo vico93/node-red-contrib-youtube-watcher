@@ -35,7 +35,7 @@ module.exports = function (RED) {
 
         async function getUploadsPlaylistId() {
             const apiKey = node.credentials?.apiKey;
-            const url = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${encodeURIComponent(node.channelId)}&key=${encodeURIComponent(apiKey)}`;
+            const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${encodeURIComponent(node.channelId)}&key=${encodeURIComponent(apiKey)}`;
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`channels.list failed: ${response.status} ${response.statusText}`);
@@ -44,7 +44,11 @@ module.exports = function (RED) {
             if (!data.items || data.items.length === 0) {
                 throw new Error(`Channel not found: ${node.channelId}`);
             }
-            const uploadsPlaylistId = data.items[0].contentDetails.relatedPlaylists.uploads;
+            const channel = data.items[0];
+            const channelThumbs = channel.snippet.thumbnails || {};
+            const channelThumb = channelThumbs.high || channelThumbs.medium || channelThumbs.default || {};
+            node.channelAvatarUrl = channelThumb.url || null;
+            const uploadsPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
             return uploadsPlaylistId;
         }
 
@@ -85,7 +89,7 @@ module.exports = function (RED) {
                 updated: published,
                 image: thumb.url || null,
                 media: media,
-                authors: [{ name: snippet.channelTitle, url: channelUrl }],
+                authors: [{ name: snippet.channelTitle, url: channelUrl, avatar_url: node.channelAvatarUrl }],
                 categories: [],
                 duration: contentDetails.videoDuration || null,
                 definition: contentDetails.videoDefinition || null,

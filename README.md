@@ -62,7 +62,7 @@ Each message contains:
       { "type": "thumbnail", "url": "...", "width": 1280, "height": 720 }
     ],
     "authors": [
-      { "name": "Channel Name", "url": "https://www.youtube.com/channel/UCxxx" }
+      { "name": "Channel Name", "url": "https://www.youtube.com/channel/UCxxx", "avatar_url": "https://..." }
     ],
     "categories": [],
     "duration": "PT3M33S",
