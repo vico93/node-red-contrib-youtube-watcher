@@ -1,0 +1,118 @@
+<script type="text/html" data-template-name="youtube-watch">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-channelId"><i class="fa fa-youtube-play"></i> Channel ID</label>
+        <input type="text" id="node-input-channelId" placeholder="UCxxxxxxxxxxxxxxxxxxxxxx">
+    </div>
+    <div class="form-row">
+        <label for="node-input-apiKey"><i class="fa fa-key"></i> API Key</label>
+        <input type="password" id="node-input-apiKey" placeholder="YouTube Data API v3 key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-interval"><i class="fa fa-repeat"></i> Refresh</label>
+        <input type="text" id="node-input-interval" style="width:60px"> <span>minutes</span>
+    </div>
+    <div class="form-row">
+        <label for="node-input-maxResults"><i class="fa fa-list"></i> Max Results</label>
+        <input type="text" id="node-input-maxResults" style="width:60px"> <span>per poll (1-50)</span>
+    </div>
+    <div class="form-row">
+        <label> </label>
+        <input type="checkbox" id="node-input-ignoreFirst" style="display:inline-block; width:20px; vertical-align:baseline;">
+        <span>Ignore existing videos on first run</span>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('youtube-watch', {
+        category: 'advanced-input',
+        color: '#FF0000',
+        defaults: {
+            name: { value: "" },
+            channelId: { value: "", required: true, validate: function (v) { return /^UC[\w-]{20,}$/.test(v); } },
+            interval: { value: 15, required: true, validate: function (v) { return (!isNaN(parseInt(v)) && parseInt(v) <= 35790); } },
+            maxResults: { value: 8, required: true, validate: function (v) { const n = parseInt(v); return !isNaN(n) && n >= 1 && n <= 50; } },
+            ignoreFirst: { value: false }
+        },
+        credentials: {
+            apiKey: { type: "password" }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "youtube-watch.svg",
+        paletteLabel: "youtube watcher",
+        label: function () {
+            return this.name || this.channelId || "youtube watcher";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<script type="text/html" data-help-name="youtube-watch">
+    <p>Monitors a YouTube channel for new uploads using the YouTube Data API v3.</p>
+
+    <h3>Setup</h3>
+    <ol>
+        <li>Obtain a YouTube Data API v3 key from the <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>.</li>
+        <li>Enable the YouTube Data API v3 for your project.</li>
+        <li>Enter the channel ID (starts with <code>UC</code>) and API key in the node properties.</li>
+    </ol>
+
+    <h3>Inputs</h3>
+    <p>None - this node polls on a schedule.</p>
+
+    <h3>Outputs</h3>
+    <p>One message per new video upload, with the following properties:</p>
+    <dl class="message-properties">
+        <dt>upload
+            <span class="property-type">object</span>
+        </dt>
+        <dd>
+            <dl class="message-properties">
+                <dt>id <span class="property-type">string</span></dt>
+                <dd>YouTube video ID (e.g., <code>dQw4w9WgXcQ</code>)</dd>
+                <dt>title <span class="property-type">string</span></dt>
+                <dd>Video title</dd>
+                <dt>description <span class="property-type">string</span></dt>
+                <dd>Video description</dd>
+                <dt>url <span class="property-type">string</span></dt>
+                <dd>Full YouTube video URL</dd>
+                <dt>published <span class="property-type">string</span></dt>
+                <dd>ISO 8601 timestamp of publication</dd>
+                <dt>updated <span class="property-type">string</span></dt>
+                <dd>Same as published for YouTube videos</dd>
+                <dt>image <span class="property-type">string</span></dt>
+                <dd>URL of the best available thumbnail</dd>
+                <dt>media <span class="property-type">array</span></dt>
+                <dd>All available thumbnail sizes</dd>
+                <dt>authors <span class="property-type">array</span></dt>
+                <dd>Channel name and URL</dd>
+                <dt>categories <span class="property-type">array</span></dt>
+                <dd>Empty (not populated)</dd>
+                <dt>duration <span class="property-type">string</span></dt>
+                <dd>ISO 8601 duration (e.g., <code>PT3M33S</code>)</dd>
+                <dt>definition <span class="property-type">string</span></dt>
+                <dd>Video quality: <code>hd</code> or <code>sd</code></dd>
+                <dt>tags <span class="property-type">array</span></dt>
+                <dd>Video tags</dd>
+            </dl>
+        </dd>
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Same as <code>upload.title</code></dd>
+        <dt>payload <span class="property-type">string</span></dt>
+        <dd>Same as <code>upload.description</code></dd>
+        <dt>link <span class="property-type">string</span></dt>
+        <dd>Same as <code>upload.url</code></dd>
+        <dt>channel <span class="property-type">string</span></dt>
+        <dd>Channel URL (e.g., <code>https://www.youtube.com/channel/UCxxx</code>)</dd>
+    </dl>
+
+    <h3>Details</h3>
+    <p>Uses the channel's uploads playlist (1 API quota unit per poll). Videos are deduplicated using node context, so restarts won't re-send previously seen videos unless "Ignore existing videos on first run" is unchecked.</p>
+    <p>The default daily YouTube API quota is 10,000 units. At 1 unit per poll, a 15-minute interval uses only 96 units per day.</p>
+</script>
